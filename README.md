@@ -10,14 +10,26 @@ This repository contains a **GitHub Copilot Skill**. Copilot agents in VS Code
 discover it via `.github/skills/maven-generate-enforcer-convergence/SKILL.md`
 and execute its script on demand.
 
-The skill runs the maven-enforcer-plugin rules below from the command line
-(without modifying your `pom.xml`) and writes the raw output to:
-
-`cortexaidevkit/<timestamp>/<outputPath>/enforcer-convergence.log`
+The skill runs the maven-enforcer-plugin rules 
 
 - **`dependencyConvergence`** — flags artifacts pulled in transitively at
   conflicting versions.
 - **`requireReleaseDeps`** — flags `-SNAPSHOT` (non-release) dependencies.
+
+and writes its output under:
+
+```
+cortexaidevkit/<timestamp>/<outputPath>/
+```
+
+
+Two files are produced in that directory:
+
+- `enforcer-convergence.log` — a filtered, human-readable report listing only
+  the enforcer rule violations (grouped by module). If no violations are found,
+  it records `No Maven Enforcer rule issues were reported.`
+- `enforcer-convergence-raw.log` — the full, unfiltered Maven build output,
+  useful for diagnosing failures unrelated to rule violations.
 
 It supports:
 

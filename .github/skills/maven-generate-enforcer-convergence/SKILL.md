@@ -7,7 +7,7 @@ authors: ["paul58914080@gmail.com"]
 
 # Generate Enforcer Convergence Report
 
-Run the maven-enforcer-plugin rules `dependencyConvergence` and `requireReleaseDeps` and produce a timestamped report in markdown format. The report is saved to the specified output directory.
+Run the maven-enforcer-plugin rules `dependencyConvergence` and `requireReleaseDeps`. 
 
 ## Purpose
 

@@ -58,6 +58,7 @@ fi
 
 REPORT_DIR="cortexaidevkit/${TIMESTAMP}/${OUTPUT_PATH}"
 FINAL_LOG="${REPORT_DIR}/enforcer-convergence.log"
+RAW_LOG="${REPORT_DIR}/enforcer-convergence-raw.log"
 mkdir -p "$REPORT_DIR"
 
 ENFORCER_GOAL="org.apache.maven.plugins:maven-enforcer-plugin:${PLUGIN_VERSION}:enforce"
@@ -78,21 +79,67 @@ echo "Plugin: ${ENFORCER_GOAL}"
 echo "Report: ${FINAL_LOG}"
 echo
 
-# -l $FINAL_LOG          => write the raw Maven output to the report log.
+# Raw Maven output is captured to RAW_LOG and then filtered into FINAL_LOG.
 # -Denforcer.fail=false  => violations become warnings so every module is
 #                           evaluated and the full set of issues is captured.
 # -Denforcer.failFast=false => do not stop at the first failing rule/module.
 set +e
-mvn -B -l "$FINAL_LOG" "${ENFORCER_GOAL}" \
+mvn -B "${ENFORCER_GOAL}" \
   -Denforcer.rules="${RULES}" \
   -Denforcer.fail=false \
-  -Denforcer.failFast=false
+  -Denforcer.failFast=false > "$RAW_LOG" 2>&1
 MVN_STATUS=$?
 set -e
 
+awk '
+  /^\[INFO\] --- maven-enforcer-plugin:.* @ .* ---$/ {
+    module_line = $0
+    sub(/^.* @ /, "", module_line)
+    sub(/ ---$/, "", module_line)
+    next
+  }
+  /^\[WARNING\] Rule [0-9]+:/ {
+    if (!printed_header) {
+      print "Maven Enforcer issues"
+      print "====================="
+      print ""
+      printed_header = 1
+    }
+    if (module_line != "") {
+      print "Module: " module_line
+    }
+    print $0
+    capture = 1
+    found = 1
+    next
+  }
+  capture {
+    if ($0 ~ /^\[(INFO|WARNING|ERROR|DEBUG|TRACE)\]/) {
+      print ""
+      capture = 0
+      if ($0 ~ /^\[WARNING\] Rule [0-9]+:/) {
+        if (module_line != "") {
+          print "Module: " module_line
+        }
+        print $0
+        capture = 1
+      }
+      next
+    }
+    print
+    next
+  }
+  END {
+    if (!found) {
+      print "No Maven Enforcer rule issues were reported."
+    }
+  }
+' "$RAW_LOG" > "$FINAL_LOG"
+
 echo
 if [ "$MVN_STATUS" -ne 0 ]; then
-  echo "Maven exited with status ${MVN_STATUS}. See ${FINAL_LOG} for details." >&2
+  echo "Maven exited with status ${MVN_STATUS}. See ${RAW_LOG} for details." >&2
 fi
 
 echo "Enforcer convergence report written to: ${FINAL_LOG}"
+echo "Raw Maven log written to: ${RAW_LOG}"
