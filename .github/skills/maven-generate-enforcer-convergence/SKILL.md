@@ -1,6 +1,6 @@
 ---
 name: maven-generate-enforcer-convergence
-description: Generate a timestamped maven enforcer report for the dependencyConvergence and requireReleaseDeps rules in markdown format.
+description: Generate a timestamped maven enforcer report for the dependencyConvergence and requireReleaseDeps rules in log format.
 argument-hint: "timestamp=<yyyymmdd-hhmmss>, outputPath=<directory-path>"
 authors: ["paul58914080@gmail.com"]
 ---

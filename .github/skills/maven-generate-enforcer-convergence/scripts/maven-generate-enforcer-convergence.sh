@@ -131,14 +131,20 @@ awk '
   }
   END {
     if (!found) {
-      print "No Maven Enforcer rule issues were reported."
+      if (mvn_status != 0) {
+        print "Maven execution failed before Enforcer rule violations could be fully determined."
+        print "See raw log for details: " raw_log
+      } else {
+        print "No Maven Enforcer rule issues were reported."
+      }
     }
   }
-' "$RAW_LOG" > "$FINAL_LOG"
+' mvn_status="$MVN_STATUS" raw_log="$RAW_LOG" "$RAW_LOG" > "$FINAL_LOG"
 
 echo
 if [ "$MVN_STATUS" -ne 0 ]; then
   echo "Maven exited with status ${MVN_STATUS}. See ${RAW_LOG} for details." >&2
+  exit "$MVN_STATUS"
 fi
 
 echo "Enforcer convergence report written to: ${FINAL_LOG}"
